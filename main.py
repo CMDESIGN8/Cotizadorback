@@ -117,7 +117,7 @@ app = FastAPI(
 # Configuración CORS MEJORADA
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "https://cotizaciones.ganbatte.com.ar/","http://127.0.0.1:5173"],
+    allow_origins=["http://localhost:5173", "https://cotizaciones.ganbatte.com.ar/","http://127.0.0.1:5173", "https://cotizador-k5x4.onrender.com"],
     allow_credentials=True,
     allow_methods=["*"],  # Incluye GET, POST, PUT, DELETE, OPTIONS, etc.
     allow_headers=["*"],  # Incluye Content-Type, Authorization, etc.
@@ -3267,4 +3267,5 @@ async def actualizar_operacion(codigo_operacion: str, update_data: dict):
 if __name__ == "__main__":
     import uvicorn
     logger.info("Ejecutando main.py directamente (uvicorn) - host 0.0.0.0:8000")
+
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=(ENV=="development"))
