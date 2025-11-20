@@ -3263,7 +3263,7 @@ async def actualizar_operacion(codigo_operacion: str, update_data: dict):
 
 # CÓDIGO A AGREGAR AL FINAL DE TU MAIN.PY:
 
-@app.get("/api/clientes/{cliente_id}/cotizaciones")
+@app.get("/clientes/{cliente_id}/cotizaciones")
 async def obtener_cotizaciones_por_cliente(cliente_id: str):
     """
     Obtiene todas las cotizaciones asociadas a un cliente específico por su ID.
@@ -3306,6 +3306,7 @@ if __name__ == "__main__":
     logger.info("Ejecutando main.py directamente (uvicorn) - host 0.0.0.0:8000")
 
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=(ENV=="development"))
+
 
 
 
