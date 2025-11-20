@@ -9,10 +9,6 @@ import asyncio
 import logging
 import traceback  # ← AGREGAR ESTA LÍNEA
 import pathlib # <-- NUEVO
-import bcrypt
-from fastapi import Body
-from auth_service import login_usuario
-from supabase import Client
 from uuid import uuid4
 from datetime import datetime, timedelta, date # <-- ¡Aquí está la corrección!
 from typing import Optional, List, Dict, Any
@@ -23,50 +19,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, EmailStr
 from dotenv import load_dotenv
 from pathlib import Path # <-- NUEVO
-from auth_jwt import crear_access_token
 
-# main.py o auth_jwt.py
-from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login")
-
-def get_current_user(token: str = Depends(oauth2_scheme)):
-    payload = verificar_access_token(token)
-    if not payload:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token inválido o expirado",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    return payload
 
 # Supabase client
 from supabase import create_client, Client
-
-# auth_jwt.py
-from datetime import datetime, timedelta
-from typing import Optional
-from jose import JWTError, jwt
-
-
-# Clave secreta (en producción, poner en .env)
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60  # 1 hora
-
-def crear_access_token(data: dict, expires_delta: Optional[timedelta] = None):
-    to_encode = data.copy()
-    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
-
-def verificar_access_token(token: str):
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        return payload
-    except JWTError:
-        return None
 
 # Load environment
 load_dotenv()
@@ -90,41 +46,9 @@ if not SUPABASE_URL or not SUPABASE_KEY:
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY) if SUPABASE_URL and SUPABASE_KEY else None
 
-ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "https://cotizador-k5x4.onrender.com", "http://localhost:5173").split(",")
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",")
 BASE_DIR = os.getenv("BASE_DIR", os.path.join(os.path.expanduser("~"), "Ganbatte", "Operaciones"))
 os.makedirs(BASE_DIR, exist_ok=True)
-
-
-def verificar_password(password: str, hashed: str) -> bool:
-    """
-    Verifica si la contraseña coincide con el hash.
-    """
-    return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
-
-def login_usuario(supabase: Client, username: str, password: str):
-    """
-    Valida el login del usuario en la tabla 'usuarios'.
-    Retorna diccionario con info del usuario si es válido, o None.
-    """
-    try:
-        response = supabase.table("usuarios").select("*").eq("username", username).execute()
-        if response.data and len(response.data) > 0:
-            usuario = response.data[0]
-            if not usuario.get("is_active", True):
-                return {"error": "Usuario inactivo"}
-            
-            hashed_password = usuario.get("hashed_password")
-            if verificar_password(password, hashed_password):
-                # Excluir hashed_password del resultado
-                usuario.pop("hashed_password", None)
-                return {"user": usuario}
-            else:
-                return {"error": "Contraseña incorrecta"}
-        else:
-            return {"error": "Usuario no encontrado"}
-    except Exception as e:
-        return {"error": f"Error interno: {str(e)}"}
-
 
 def get_ruta_operacion(codigo_folder: str) -> str:
     """
@@ -446,10 +370,6 @@ ESTADOS_COTIZACION = {
 # -----------------------
 # Pydantic models
 # -----------------------
-
-class LoginRequest(BaseModel):
-    username: str
-    password: str
 
 class TrackingUpdate(BaseModel):
     codigo_operacion: str
@@ -3340,21 +3260,6 @@ async def actualizar_operacion(codigo_operacion: str, update_data: dict):
     except Exception as e:
         logger.exception("Error actualizando operación: %s", e)
         raise HTTPException(status_code=500, detail=f"Error al actualizar operación: {str(e)}")
-    
-# main.py
-from auth_jwt import crear_access_token
-
-from fastapi import FastAPI, HTTPException
-from auth_service import login_usuario
-
-app = FastAPI()
-
-@app.post("/api/login")
-def login(data: dict):
-    user = login_usuario(data["username"], data["password"])
-    if not user:
-        raise HTTPException(status_code=401, detail="Usuario o contraseña incorrecta")
-    return {"message": "Login exitoso", "user": user["username"]}
 
 # -----------------------
 # Main (for local run)
@@ -3362,5 +3267,4 @@ def login(data: dict):
 if __name__ == "__main__":
     import uvicorn
     logger.info("Ejecutando main.py directamente (uvicorn) - host 0.0.0.0:8000")
-
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=(ENV=="development"))
