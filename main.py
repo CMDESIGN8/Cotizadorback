@@ -90,7 +90,7 @@ if not SUPABASE_URL or not SUPABASE_KEY:
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY) if SUPABASE_URL and SUPABASE_KEY else None
 
-ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",")
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "https://cotizador-k5x4.onrender.com", "http://localhost:5173").split(",")
 BASE_DIR = os.getenv("BASE_DIR", os.path.join(os.path.expanduser("~"), "Ganbatte", "Operaciones"))
 os.makedirs(BASE_DIR, exist_ok=True)
 
@@ -3362,4 +3362,5 @@ def login(data: dict):
 if __name__ == "__main__":
     import uvicorn
     logger.info("Ejecutando main.py directamente (uvicorn) - host 0.0.0.0:8000")
+
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=(ENV=="development"))
