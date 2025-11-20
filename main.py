@@ -163,7 +163,7 @@ def obtener_estructura_carpeta(ruta_base: Path):
 
     return estructura
 
-@app.post("/api/operaciones/{codigo_operacion:path}/subir-archivo")
+@app.post("/operaciones/{codigo_operacion:path}/subir-archivo")
 async def subir_archivo_operacion(
     codigo_operacion: str,
     subcarpeta: str = Form(...),
@@ -214,7 +214,7 @@ async def subir_archivo_operacion(
         logger.exception(f"Error subiendo archivo para {codigo_operacion}: {e}")
         raise HTTPException(status_code=500, detail=f"Error al subir archivo: {str(e)}")
     
-@app.post("/api/operaciones/{codigo_operacion:path}/abrir-carpeta")
+@app.post("/operaciones/{codigo_operacion:path}/abrir-carpeta")
 async def abrir_carpeta_operacion(codigo_operacion: str):
     """
     Abre la carpeta de la operación en el explorador de archivos del sistema, 
@@ -264,7 +264,7 @@ async def abrir_carpeta_operacion(codigo_operacion: str):
         logger.error(f"Error abriendo carpeta para {codigo_operacion}: {e}")
         raise HTTPException(status_code=500, detail=f"Error al intentar abrir la carpeta: {str(e)}")
 
-@app.get("/api/operaciones/{codigo_operacion:path}/archivos")
+@app.get("/operaciones/{codigo_operacion:path}/archivos")
 async def get_archivos_operacion(codigo_operacion: str):
     """
     Lista los archivos, mapeando el código de la Operación (URL) al código de la Cotización (Carpeta).
@@ -589,7 +589,7 @@ def health_check():
     return {"status": "healthy", "database": db_status}
 
 
-@app.post("/api/operaciones/tracking")
+@app.post("/operaciones/tracking")
 async def actualizar_tracking(data: TrackingUpdate):
     # Buscar operación
     op_response = supabase.table("operaciones").select("*").eq("codigo_operacion", data.codigo_operacion).single().execute()
@@ -610,7 +610,7 @@ async def actualizar_tracking(data: TrackingUpdate):
     return {"message": "Datos de tracking actualizados", "datos_cotizacion": datos_actualizados}
 
 
-@app.get("/api/cotizaciones/{codigo_path:path}")
+@app.get("/cotizaciones/{codigo_path:path}")
 async def obtener_cotizacion_completa(codigo_path: str):
     """Obtener una cotización específica - maneja códigos con barras"""
     try:
@@ -660,7 +660,7 @@ async def obtener_cotizacion_completa(codigo_path: str):
         raise HTTPException(status_code=500, detail=f"Error al obtener cotización: {str(e)}")
 
 
-@app.post("/api/cotizaciones/duplicar")
+@app.post("/cotizaciones/duplicar")
 async def duplicar_cotizacion(cotizacion_duplicada: dict):
     """Duplicar cotización - CORREGIDO para campos específicos"""
     try:
@@ -851,7 +851,7 @@ async def duplicar_cotizacion(cotizacion_duplicada: dict):
         logger.exception("Error duplicando cotización: %s", e)
         raise HTTPException(status_code=500, detail=f"Error duplicando cotización: {str(e)}")
 
-@app.post("/api/debug/duplicacion-detalle")
+@app.post("/debug/duplicacion-detalle")
 async def debug_duplicacion_detalle(cotizacion_duplicada: dict):
     """Endpoint para debug detallado de datos recibidos"""
     print("🔍 DEBUG DETALLADO - Datos recibidos para duplicación:")
@@ -882,7 +882,7 @@ async def debug_duplicacion_detalle(cotizacion_duplicada: dict):
     }
 
 
-@app.put("/api/cotizaciones/{codigo_legible}")
+@app.put("/cotizaciones/{codigo_legible}")
 async def actualizar_cotizacion(codigo_legible: str, cotizacion: dict):
     """Actualizar una cotización existente - CORREGIDO"""
     try:
@@ -925,7 +925,7 @@ async def actualizar_cotizacion(codigo_legible: str, cotizacion: dict):
 
 
 
-@app.get("/api/debug/routes")
+@app.get("/debug/routes")
 async def debug_routes():
     """Endpoint para depurar las rutas disponibles"""
     routes = []
@@ -938,7 +938,7 @@ async def debug_routes():
             })
     return {"routes": routes}
 
-@app.get("/api/debug/cotizaciones")
+@app.get("/debug/cotizaciones")
 async def debug_cotizaciones():
     """Endpoint de diagnóstico para ver todas las cotizaciones"""
     try:
@@ -954,7 +954,7 @@ async def debug_cotizaciones():
     except Exception as e:
         return {"error": str(e)}
 
-@app.post("/api/guardar-pdf-carpeta")
+@app.post("/guardar-pdf-carpeta")
 async def guardar_pdf_carpeta(
     archivo: UploadFile = File(...),
     codigo_cotizacion: str = Form(...),
@@ -1000,7 +1000,7 @@ async def guardar_pdf_carpeta(
         raise HTTPException(status_code=500, detail=f"Error guardando PDF: {str(e)}")
     
 
-@app.get("/api/descargar-pdf")
+@app.get("/descargar-pdf")
 async def descargar_pdf(codigo_cotizacion: str, tipo_pdf: str = "interno"):
     """
     Devuelve el PDF - con debug extendido
@@ -1101,7 +1101,7 @@ async def descargar_pdf(codigo_cotizacion: str, tipo_pdf: str = "interno"):
         print(f"❌ TRACEBACK: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Error interno del servidor: {str(e)}")
     
-@app.post("/api/crear_carpeta/")
+@app.post("/crear_carpeta/")
 def crear_carpeta(request: CodigoRequest):
     """
     Crea la carpeta de operación con subcarpetas organizadas
@@ -1143,7 +1143,7 @@ def crear_carpeta(request: CodigoRequest):
             "carpeta_nueva": False
         }
 
-@app.post("/api/abrir_carpeta/")
+@app.post("/abrir_carpeta/")
 def abrir_carpeta(request: CodigoRequest):
     carpeta_path = os.path.join(BASE_DIR, request.codigo)
     try:
@@ -1375,7 +1375,7 @@ async def startup_event():
 # Endpoints de Clientes
 # -----------------------
 
-@app.get("/api/gastos_locales_maritimos_combinado/{tipo_operacion}/{linea_maritima}/{equipo}")
+@app.get("/gastos_locales_maritimos_combinado/{tipo_operacion}/{linea_maritima}/{equipo}")
 async def get_gastos_locales_maritimos_combinado(tipo_operacion: str, linea_maritima: str, equipo: str):
     try:
         # Costos de la línea real (ej: COSCO)
@@ -1408,7 +1408,7 @@ async def get_gastos_locales_maritimos_combinado(tipo_operacion: str, linea_mari
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
 
-@app.post("/api/clientes", response_model=Cliente)
+@app.post("/clientes", response_model=Cliente)
 async def crear_cliente(cliente: ClienteCreate):
     """Crear un nuevo cliente"""
     try:
@@ -1450,7 +1450,7 @@ async def crear_cliente(cliente: ClienteCreate):
         raise HTTPException(status_code=500, detail=f"Error creando cliente: {str(e)}")
     
     
-@app.get("/api/clientes")
+@app.get("/clientes")
 async def listar_clientes(activo: Optional[bool] = None, search: Optional[str] = None):
     """Obtener lista de clientes con filtros opcionales"""
     try:
@@ -1477,7 +1477,7 @@ async def listar_clientes(activo: Optional[bool] = None, search: Optional[str] =
         logger.exception("Error listando clientes: %s", e)
         raise HTTPException(status_code=500, detail=f"Error al obtener clientes: {str(e)}")
 
-@app.get("/api/clientes/{cliente_id}")
+@app.get("/clientes/{cliente_id}")
 async def obtener_cliente(cliente_id: str):
     """Obtener un cliente específico por ID"""
     try:
@@ -1497,7 +1497,7 @@ async def obtener_cliente(cliente_id: str):
         logger.exception("Error obteniendo cliente: %s", e)
         raise HTTPException(status_code=500, detail=f"Error al obtener cliente: {str(e)}")
 
-@app.put("/api/clientes/{cliente_id}")
+@app.put("/clientes/{cliente_id}")
 async def actualizar_cliente(cliente_id: str, cliente_update: ClienteUpdate):
     """Actualizar un cliente existente"""
     try:
@@ -1528,7 +1528,7 @@ async def actualizar_cliente(cliente_id: str, cliente_update: ClienteUpdate):
         logger.exception("Error actualizando cliente: %s", e)
         raise HTTPException(status_code=500, detail=f"Error actualizando cliente: {str(e)}")
 
-@app.delete("/api/clientes/{cliente_id}")
+@app.delete("/clientes/{cliente_id}")
 async def desactivar_cliente(cliente_id: str):
     """Desactivar un cliente (eliminación lógica)"""
     try:
@@ -1558,7 +1558,7 @@ async def desactivar_cliente(cliente_id: str):
         logger.exception("Error desactivando cliente: %s", e)
         raise HTTPException(status_code=500, detail=f"Error desactivando cliente: {str(e)}")
 
-@app.get("/api/clientes/{cliente_id}/cotizaciones")
+@app.get("/clientes/{cliente_id}/cotizaciones")
 async def obtener_cotizaciones_cliente(cliente_id: str):
     """Obtener todas las cotizaciones de un cliente específico"""
     try:
@@ -1678,7 +1678,7 @@ def map_to_concepts(data: Dict[str, Any], is_costo: bool, tipo_operacion: str) -
 # --- ENDPOINT CORREGIDO (Reemplazar la versión anterior) ---
 
 
-@app.get("/api/costos-maritimos-fcl-locales")
+@app.get("/costos-maritimos-fcl-locales")
 def get_costos_maritimos_fcl_locales(tipo_operacion: str, equipo: str, linea_maritima: str):
     """
     Devuelve costos (línea seleccionada) y ventas (GANBATTE) sin importar mayúsculas/minúsculas
@@ -1706,7 +1706,7 @@ def get_costos_maritimos_fcl_locales(tipo_operacion: str, equipo: str, linea_mar
 
     return {"costos_base": costos_base, "ventas_base": ventas_base}
 
-@app.post("/api/costos_personalizados/guardar")
+@app.post("/costos_personalizados/guardar")
 async def guardar_costos_personalizados(solicitud: dict):
     """Guarda o actualiza costos personalizados para una cotización."""
     if supabase is None:
@@ -1828,7 +1828,7 @@ async def guardar_costos_personalizados(solicitud: dict):
         print(f"🔍 [GUARDAR_COSTOS] Stack trace: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Error al guardar costos: {str(e)}")
 
-@app.get("/api/costos_personalizados/{codigo_cotizacion:path}") # <--- ¡CAMBIO AQUÍ!
+@app.get("/costos_personalizados/{codigo_cotizacion:path}") # <--- ¡CAMBIO AQUÍ!
 async def get_costos_personalizados(codigo_cotizacion: str):
     """Obtiene los costos personalizados guardados para una cotización específica."""
     if supabase is None:
@@ -1881,7 +1881,7 @@ async def get_costos_personalizados(codigo_cotizacion: str):
 # Endpoints para Costos (CORREGIDOS - solo GET)
 # -----------------------
 
-@app.get("/api/tasas_cambio")
+@app.get("/tasas_cambio")
 async def obtener_tasas_cambio():
     """
     Obtener tasas de cambio actualizadas desde una API externa
@@ -1938,7 +1938,7 @@ async def obtener_tasas_cambio():
             "fuente": f"Fallback por error: {str(e)}"
         }
 
-@app.get("/api/costos-predefinidos")
+@app.get("/costos-predefinidos")
 async def get_costos_predefinidos(
     tipo_operacion: str, 
     incoterm: Optional[str] = None, 
@@ -2022,7 +2022,7 @@ async def get_costos_predefinidos(
         logger.exception("Error obteniendo costos predefinidos: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/api/costos-ganbatte")
+@app.get("/costos-ganbatte")
 async def get_costos_ganbatte(tipo_operacion: str, equipo: str):
     """Obtener costos de Ganbatte como referencia para Marítima FCL (GET)"""
     try:
@@ -2089,7 +2089,7 @@ async def get_costos_ganbatte(tipo_operacion: str, equipo: str):
     
 # Agregar estos endpoints a tu FastAPI
 
-@app.get("/api/ia/alertas-proactivas/{codigo_operacion:path}")
+@app.get("/ia/alertas-proactivas/{codigo_operacion:path}")
 async def obtener_alertas_proactivas(codigo_operacion: str):
     """Genera alertas proactivas basadas en el estado de la operación"""
     try:
@@ -2134,7 +2134,7 @@ async def obtener_alertas_proactivas(codigo_operacion: str):
         logger.exception(f"Error generando alertas: {e}")
         return {"alertas": []}
 
-@app.get("/api/operaciones/{codigo_operacion:path}/estadisticas")
+@app.get("/operaciones/{codigo_operacion:path}/estadisticas")
 async def obtener_estadisticas_operacion(codigo_operacion: str):
     """Calcula estadísticas de la operación"""
     try:
@@ -2148,7 +2148,7 @@ async def obtener_estadisticas_operacion(codigo_operacion: str):
         logger.exception(f"Error obteniendo estadísticas: {e}")
         return {"progreso": 0, "tareasPendientes": 0, "documentosFaltantes": 0}
 
-@app.get("/api/costos-linea-maritima")
+@app.get("/costos-linea-maritima")
 async def get_costos_linea_maritima(
     tipo_operacion: str, 
     linea_maritima: str, 
@@ -2185,7 +2185,7 @@ async def get_costos_linea_maritima(
         logger.exception("Error obteniendo costos línea marítima: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/api/costos-automaticos")
+@app.get("/costos-automaticos")
 async def get_costos_automaticos(
     tipo_operacion: str, 
     modo_transporte: str, 
@@ -2234,7 +2234,7 @@ async def get_costos_automaticos(
 # Endpoints de Configuración
 # -----------------------
 
-@app.get("/api/lineas-maritimas")
+@app.get("/lineas-maritimas")
 async def get_lineas_maritimas():
     """Obtener todas las líneas marítimas únicas"""
     try:
@@ -2256,7 +2256,7 @@ async def get_lineas_maritimas():
         logger.exception("Error obteniendo líneas marítimas: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/api/tipos-equipo")
+@app.get("/tipos-equipo")
 async def get_tipos_equipo():
     """Obtener tipos de equipo únicos"""
     try:
@@ -2277,7 +2277,7 @@ async def get_tipos_equipo():
         logger.exception("Error obteniendo tipos de equipo: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/api/configuracion-costos")
+@app.get("/configuracion-costos")
 async def get_configuracion_costos():
     """Obtener configuración general de costos"""
     try:
@@ -2296,7 +2296,7 @@ async def get_configuracion_costos():
 # Endpoints para Aerolíneas
 # -----------------------
 
-@app.get("/api/aerolineas")
+@app.get("/aerolineas")
 async def get_aerolineas():
     """Obtener todas las aerolíneas activas"""
     try:
@@ -2322,7 +2322,7 @@ async def get_aerolineas():
 # Endpoints de Cotizaciones (EXISTENTES)
 # -----------------------
 
-@app.delete("/api/cotizaciones/{codigo_legible}")
+@app.delete("/cotizaciones/{codigo_legible}")
 async def eliminar_cotizacion(codigo_legible: str):
     """Eliminar una cotización y sus costos asociados"""
     try:
@@ -2351,7 +2351,7 @@ async def eliminar_cotizacion(codigo_legible: str):
 
 
 # ✅ ENDPOINTS ESPECÍFICOS CON PATH PARAMETER (para manejar códigos con /)
-@app.get("/api/cotizaciones/{codigo_path:path}")
+@app.get("/cotizaciones/{codigo_path:path}")
 async def obtener_cotizacion_completa(codigo_path: str):
     """Obtener una cotización específica - maneja códigos con barras"""
     try:
@@ -2401,7 +2401,7 @@ async def obtener_cotizacion_completa(codigo_path: str):
         raise HTTPException(status_code=500, detail=f"Error al obtener cotización: {str(e)}")
 
 # ✅ PUT también debe usar path parameter
-@app.put("/api/cotizaciones/{codigo_path:path}")
+@app.put("/cotizaciones/{codigo_path:path}")
 async def actualizar_cotizacion(codigo_path: str, cotizacion: dict):
     """Actualizar una cotización existente - maneja códigos con barras"""
     try:
@@ -2443,7 +2443,7 @@ async def actualizar_cotizacion(codigo_path: str, cotizacion: dict):
         raise HTTPException(status_code=500, detail=f"Error actualizando cotización: {str(e)}")
 
 # ✅ DELETE también con path parameter
-@app.delete("/api/cotizaciones/{codigo_path:path}")
+@app.delete("/cotizaciones/{codigo_path:path}")
 async def eliminar_cotizacion(codigo_path: str):
     """Eliminar una cotización - maneja códigos con barras"""
     try:
@@ -2470,7 +2470,7 @@ async def eliminar_cotizacion(codigo_path: str):
         logger.exception("Error eliminando cotización: %s", e)
         raise HTTPException(status_code=500, detail=f"Error eliminando cotización: {str(e)}")
 
-@app.post("/api/cotizaciones")
+@app.post("/cotizaciones")
 async def crear_cotizacion(cotizacion: Cotizacion, background_tasks: BackgroundTasks):
     # Validaciones básicas
     try:
@@ -2560,7 +2560,7 @@ async def crear_cotizacion(cotizacion: Cotizacion, background_tasks: BackgroundT
         raise HTTPException(status_code=500, detail=f"Error creando cotización: {str(e)}")
 
 
-@app.get("/api/cotizaciones")
+@app.get("/cotizaciones")
 def listar_cotizaciones():
     try:
         if supabase is None:
@@ -2766,7 +2766,7 @@ async def generar_costos_predefinidos(tipo_operacion: str, incoterm: str, modo_t
     logger.info(f"✅ Retornando {len(conceptos_ejemplo)} conceptos predefinidos")
     return conceptos_ejemplo
 
-@app.get("/api/puertos_aeropuertos")
+@app.get("/puertos_aeropuertos")
 def listar_puertos(tipo: Optional[str] = None, pais: Optional[str] = None):
     try:
         q = supabase.table("puertos_aeropuertos").select("*").eq("activo", True)
@@ -2782,7 +2782,7 @@ def listar_puertos(tipo: Optional[str] = None, pais: Optional[str] = None):
         logger.exception("Error listando puertos/aeropuertos: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/api/operaciones/{codigo_operacion:path}/checklist")
+@app.get("/operaciones/{codigo_operacion:path}/checklist")
 async def get_checklist_operacion(codigo_operacion: str):
     """Obtener todos los checklist items para una operación"""
     try:
@@ -2799,7 +2799,7 @@ async def get_checklist_operacion(codigo_operacion: str):
         logger.exception("Error obteniendo checklist: %s", e)
         raise HTTPException(status_code=500, detail=f"Error al obtener checklist: {str(e)}")
 
-@app.post("/api/operaciones/{codigo_operacion:path}/checklist")
+@app.post("/operaciones/{codigo_operacion:path}/checklist")
 async def add_checklist_item(codigo_operacion: str, item: ChecklistItem):
     """Añadir una nueva tarea al checklist"""
     try:
@@ -2827,7 +2827,7 @@ async def add_checklist_item(codigo_operacion: str, item: ChecklistItem):
 # 🧠 Endpoint de Inteligencia Operativa
 # ------------------------------------------------
 
-@app.get("/api/debug/operacion/{codigo_operacion:path}")
+@app.get("/debug/operacion/{codigo_operacion:path}")
 async def debug_operacion(codigo_operacion: str):
     """Endpoint de diagnóstico para operaciones"""
     try:
@@ -2864,7 +2864,7 @@ async def debug_operacion(codigo_operacion: str):
         logger.exception(f"Error en debug: {e}")
         return {"error": str(e)}
 
-@app.get("/api/ia/recomendaciones/{codigo_operacion:path}")
+@app.get("/ia/recomendaciones/{codigo_operacion:path}")
 async def obtener_recomendaciones(codigo_operacion: str):
     """
     Devuelve recomendaciones IA basadas en la operación y su cotización.
@@ -2959,7 +2959,7 @@ async def obtener_recomendaciones(codigo_operacion: str):
     
 
 
-@app.get("/api/ia/datos-faltantes/{codigo_operacion:path}")
+@app.get("/ia/datos-faltantes/{codigo_operacion:path}")
 async def obtener_datos_faltantes(codigo_operacion: str):
     """
     Detecta datos faltantes críticos para las predicciones de IA
@@ -3078,7 +3078,7 @@ async def obtener_datos_faltantes(codigo_operacion: str):
 
 
 
-@app.put("/api/checklist/{item_id}")
+@app.put("/checklist/{item_id}")
 async def update_checklist_item(item_id: str, item_update: ChecklistItemUpdate):
     """Actualizar una tarea (marcar como completada)"""
     try:
@@ -3097,7 +3097,7 @@ async def update_checklist_item(item_id: str, item_update: ChecklistItemUpdate):
         logger.exception("Error actualizando tarea: %s", e)
         raise HTTPException(status_code=500, detail=f"Error al actualizar tarea: {str(e)}")
 
-@app.delete("/api/checklist/{item_id}")
+@app.delete("/checklist/{item_id}")
 async def delete_checklist_item(item_id: str):
     """Eliminar una tarea del checklist"""
     try:
@@ -3114,7 +3114,7 @@ async def delete_checklist_item(item_id: str):
         logger.exception("Error eliminando tarea: %s", e)
         raise HTTPException(status_code=500, detail=f"Error al eliminar tarea: {str(e)}")
 
-@app.post("/api/cotizaciones/cambiar-estado")
+@app.post("/cotizaciones/cambiar-estado")
 async def cambiar_estado(request: CambioEstadoRequest, background_tasks: BackgroundTasks):
     try:
         if request.nuevo_estado not in ESTADOS_COTIZACION:
@@ -3145,7 +3145,7 @@ async def cambiar_estado(request: CambioEstadoRequest, background_tasks: Backgro
         logger.exception("Error cambiando estado: %s", e)
         raise HTTPException(status_code=500, detail=f"Error cambiando estado: {str(e)}")
 
-@app.put("/api/operaciones/{codigo_operacion:path}")
+@app.put("/operaciones/{codigo_operacion:path}")
 async def actualizar_operacion(codigo_operacion: str, datos_actualizados: dict):
     """
     Actualizar los datos de una operación existente
@@ -3214,7 +3214,7 @@ async def actualizar_operacion(codigo_operacion: str, datos_actualizados: dict):
 # Endpoints de Operaciones
 # -----------------------
 
-@app.get("/api/operaciones")
+@app.get("/operaciones")
 async def listar_operaciones():
     """Obtener lista de todas las operaciones"""
     try:
@@ -3227,7 +3227,7 @@ async def listar_operaciones():
         logger.exception("Error listando operaciones: %s", e)
         raise HTTPException(status_code=500, detail=f"Error al obtener operaciones: {str(e)}")
 
-@app.get("/api/operaciones/{codigo_operacion:path}")
+@app.get("/operaciones/{codigo_operacion:path}")
 async def obtener_operacion(codigo_operacion: str):
     """Obtener una operación específica por su codigo_operacion"""
     try:
@@ -3242,7 +3242,7 @@ async def obtener_operacion(codigo_operacion: str):
         logger.exception("Error obteniendo operación: %s", e)
         raise HTTPException(status_code=500, detail=f"Error al obtener operación: {str(e)}")
 
-@app.put("/api/operaciones/{codigo_operacion:path}")
+@app.put("/operaciones/{codigo_operacion:path}")
 async def actualizar_operacion(codigo_operacion: str, update_data: dict):
     """Actualizar el estado u otros datos de una operación"""
     try:
@@ -3261,75 +3261,6 @@ async def actualizar_operacion(codigo_operacion: str, update_data: dict):
         logger.exception("Error actualizando operación: %s", e)
         raise HTTPException(status_code=500, detail=f"Error al actualizar operación: {str(e)}")
 
-# ---------------------------------------------------------
-# AGREGAR ESTO AL FINAL DE TU MAIN.PY
-# ---------------------------------------------------------
-
-# 1. Endpoint para CLIENTES
-@app.get("/clientes")
-async def leer_clientes():
-    try:
-        # Consulta a Supabase
-        response = supabase.table("clientes").select("*").order("nombre").execute()
-        return response.data
-    except Exception as e:
-        logger.error(f"Error obteniendo clientes: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-# 2. Endpoint para COTIZACIONES (Listado general)
-@app.get("/cotizaciones")
-async def leer_cotizaciones():
-    try:
-        # Traemos las últimas 50 cotizaciones ordenadas por fecha
-        response = supabase.table("cotizaciones").select("*").order("fecha_creacion", desc=True).limit(50).execute()
-        
-        # Procesamos para agregar estado visual (opcional, según tu lógica)
-        cotizaciones_data = response.data
-        for cot in cotizaciones_data:
-            # Calcular estado simple si es necesario
-            pass 
-            
-        return cotizaciones_data
-    except Exception as e:
-        logger.error(f"Error obteniendo cotizaciones: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-# 3. Endpoint para PUERTOS Y AEROPUERTOS (Con filtros)
-@app.get("/puertos_aeropuertos")
-async def leer_puertos_aeropuertos(tipo: Optional[str] = None, pais: Optional[str] = None):
-    try:
-        query = supabase.table("puertos_aeropuertos").select("*")
-        
-        # Aplicar filtros si vienen en la URL (?tipo=Maritimo&pais=China)
-        if tipo:
-            query = query.eq("tipo", tipo)
-        if pais:
-            query = query.eq("pais", pais)
-            
-        response = query.order("nombre").execute()
-        return response.data
-    except Exception as e:
-        logger.error(f"Error obteniendo puertos/aeropuertos: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-# 4. Endpoint para PAISES (Lo vi en tus logs de error también)
-@app.get("/paises")
-async def leer_paises():
-    try:
-        # Asumiendo que tienes una tabla paises o sacas distinct de puertos
-        # Si tienes tabla 'paises':
-        # response = supabase.table("paises").select("*").execute()
-        
-        # O si sacas los países de la tabla de puertos:
-        response = supabase.table("puertos_aeropuertos").select("pais").execute()
-        # Filtrar únicos en python
-        paises_unicos = list(set([item['pais'] for item in response.data if item['pais']]))
-        return sorted(paises_unicos)
-        
-    except Exception as e:
-        logger.error(f"Error obteniendo países: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
 # -----------------------
 # Main (for local run)
 # -----------------------
@@ -3338,4 +3269,5 @@ if __name__ == "__main__":
     logger.info("Ejecutando main.py directamente (uvicorn) - host 0.0.0.0:8000")
 
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=(ENV=="development"))
+
 
