@@ -3297,6 +3297,35 @@ async def obtener_cotizaciones_por_cliente(cliente_id: str):
         if "PostgrestError" in str(e) or "Row Not Found" in str(e):
              raise HTTPException(status_code=404, detail="Cliente o datos no encontrados.")
         raise HTTPException(status_code=500, detail=f"Error interno al obtener cotizaciones por cliente: {str(e)}")
+        @app.get("/api/clientes/{cliente_id}/cotizaciones")
+async def obtener_cotizaciones_por_cliente(cliente_id: str):
+    """
+    Obtiene todas las cotizaciones asociadas a un cliente específico por su ID.
+    """
+    try:
+        # 1. Buscamos el nombre del cliente usando el ID (UUID)
+        cliente_response = supabase.table("clientes").select("nombre").eq("id", cliente_id).single().execute()
+        
+        if not cliente_response.data:
+            raise HTTPException(status_code=404, detail="Cliente no encontrado")
+            
+        nombre_cliente = cliente_response.data['nombre']
+        
+        # 2. Buscamos las cotizaciones usando el nombre
+        response = supabase.table("cotizaciones") \
+            .select("*") \
+            .eq("cliente", nombre_cliente) \
+            .order("fecha_creacion", desc=True) \
+            .execute()
+            
+        return response.data
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error obteniendo cotizaciones para cliente {cliente_id}: {e}")
+        # Asegúrate de importar 'logger' si no lo has hecho
+        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
 
 # -----------------------
 # Main (for local run)
@@ -3306,6 +3335,7 @@ if __name__ == "__main__":
     logger.info("Ejecutando main.py directamente (uvicorn) - host 0.0.0.0:8000")
 
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=(ENV=="development"))
+
 
 
 
