@@ -3261,6 +3261,43 @@ async def actualizar_operacion(codigo_operacion: str, update_data: dict):
         logger.exception("Error actualizando operación: %s", e)
         raise HTTPException(status_code=500, detail=f"Error al actualizar operación: {str(e)}")
 
+# CÓDIGO A AGREGAR AL FINAL DE TU MAIN.PY:
+
+@app.get("/api/clientes/{cliente_id}/cotizaciones")
+async def obtener_cotizaciones_por_cliente(cliente_id: str):
+    """
+    Obtiene todas las cotizaciones asociadas a un cliente específico por su ID.
+    """
+    try:
+        # Nota: La tabla 'cotizaciones' usa el 'nombre' del cliente,
+        # pero la solicitud usa el 'id' (UUID).
+        # Primero, buscamos el nombre del cliente usando el ID.
+        cliente_response = supabase.table("clientes").select("nombre").eq("id", cliente_id).single().execute()
+        
+        if not cliente_response.data:
+            raise HTTPException(status_code=404, detail="Cliente no encontrado")
+            
+        nombre_cliente = cliente_response.data['nombre']
+        
+        # Luego, buscamos las cotizaciones usando el nombre del cliente (asumiendo que así está en la tabla cotizaciones)
+        response = supabase.table("cotizaciones") \
+            .select("*") \
+            .eq("cliente", nombre_cliente) \
+            .order("fecha_creacion", desc=True) \
+            .execute()
+            
+        return response.data
+        
+    except HTTPException:
+        raise # Re-lanzar el 404 si el cliente no existe
+    except Exception as e:
+        logger.error(f"Error obteniendo cotizaciones para cliente {cliente_id}: {e}")
+        # Asegurarse de que si el error es de Supabase (por ejemplo, single() falla si no encuentra)
+        # se maneje elegantemente.
+        if "PostgrestError" in str(e) or "Row Not Found" in str(e):
+             raise HTTPException(status_code=404, detail="Cliente o datos no encontrados.")
+        raise HTTPException(status_code=500, detail=f"Error interno al obtener cotizaciones por cliente: {str(e)}")
+
 # -----------------------
 # Main (for local run)
 # -----------------------
@@ -3269,5 +3306,6 @@ if __name__ == "__main__":
     logger.info("Ejecutando main.py directamente (uvicorn) - host 0.0.0.0:8000")
 
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=(ENV=="development"))
+
 
 
