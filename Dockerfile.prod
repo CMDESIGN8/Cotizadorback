@@ -1,0 +1,42 @@
+# ETAPA 1: Construcción (Instalar dependencias)
+# Usamos una imagen completa de Python para compilar dependencias binarias (ej. psycopg2)
+FROM python:3.11-slim as builder
+
+# Establecer variables de entorno
+ENV PYTHONUNBUFFERED 1
+ENV PYTHONDONTWRITEBYTECODE 1
+
+# Crear el directorio de trabajo y copiar los requisitos
+WORKDIR /app
+COPY requirements.txt .
+
+# Instalar dependencias del sistema y de Python
+# Las dependencias de psycopg2-binary requieren librerías de compilación (build-essential)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends gcc libpq-dev && \
+    pip install --no-cache-dir -r requirements.txt && \
+    # Limpiar después de la instalación
+    apt-get purge -y gcc libpq-dev && \
+    apt-get autoremove -y && \
+    rm -rf /var/lib/apt/lists/*
+
+# ETAPA 2: Producción (Imagen final ligera)
+# Usar una imagen Python más pequeña y limpia para la ejecución
+FROM python:3.11-slim
+
+# Crear el directorio de trabajo
+WORKDIR /app
+
+# Copiar las dependencias instaladas y el código de la aplicación
+# Copiamos solo las librerías instaladas desde la etapa 'builder'
+COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+
+# Copiar el código fuente (excluir archivos de desarrollo)
+COPY . /app
+
+# Exponer el puerto del servidor (para la red interna de Docker)
+EXPOSE 8000
+
+# El comando de inicio para producción (ejecutado por Uvicorn, NO por gunicorn o un proceso de desarrollo)
+# uvicorn main:app inicia el objeto 'app' dentro del archivo 'main.py'
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]

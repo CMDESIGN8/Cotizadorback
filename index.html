@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <title>Carga de Cotizaciones - Ganbatte</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f9fafb;
+      color: #222;
+      padding: 20px;
+      width: 100%;
+      margin: auto;
+    }
+
+    h1, h2 {
+      color: #0f172a;
+      margin-bottom: 15px;
+    }
+
+    form {
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 12px rgb(0 0 0 / 0.1);
+      margin-bottom: 30px;
+    }
+
+    form label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 600;
+      color: #334155;
+    }
+
+    form input[type="text"],
+    form select {
+      width: 100%;
+      padding: 8px 10px;
+      margin-bottom: 15px;
+      border: 1.8px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 1rem;
+      transition: border-color 0.3s ease;
+    }
+
+    form input[type="text"]:focus,
+    form select:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 4px #3b82f6;
+    }
+
+    form button {
+      background-color: #2563eb;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      width: 100%;
+    }
+
+    form button:hover {
+      background-color: #1e40af;
+    }
+
+    /* Filtros */
+    #filtros {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    #filtros input {
+      flex: 1 1 150px;
+      padding: 8px 10px;
+      border: 1.8px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 1rem;
+      transition: border-color 0.3s ease;
+    }
+
+    #filtros input:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 4px #3b82f6;
+    }
+
+    /* Tabla */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 0 12px rgb(0 0 0 / 0.1);
+    }
+
+    thead {
+      background-color: #e0e7ff;
+    }
+
+    th, td {
+      padding: 12px 15px;
+      text-align: left;
+      border-bottom: 1px solid #f1f5f9;
+      font-size: 0.95rem;
+      color: #334155;
+    }
+
+    tbody tr:nth-child(even) {
+      background-color: #f8fafc;
+    }
+
+    tbody tr:hover {
+      background-color: #c7d2fe;
+      cursor: default;
+    }
+
+    /* Botones en tabla */
+    table button {
+      background-color: #2563eb;
+      border: none;
+      color: white;
+      padding: 6px 12px;
+      margin-right: 6px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: background-color 0.3s ease;
+    }
+
+    table button:hover {
+      background-color: #1e40af;
+    }
+
+    /* Responsive para filtros y tabla */
+    @media (max-width: 600px) {
+      #filtros {
+        flex-direction: column;
+      }
+
+      table, thead, tbody, th, td, tr {
+        display: block;
+      }
+
+      thead tr {
+        display: none;
+      }
+
+      tbody tr {
+        margin-bottom: 15px;
+        border-radius: 8px;
+        box-shadow: 0 0 8px rgb(0 0 0 / 0.1);
+        padding: 12px;
+      }
+
+      tbody td {
+        border: none;
+        padding-left: 50%;
+        position: relative;
+        white-space: normal;
+      }
+
+      tbody td::before {
+        position: absolute;
+        top: 12px;
+        left: 15px;
+        width: 45%;
+        padding-right: 10px;
+        white-space: nowrap;
+        font-weight: 700;
+        content: attr(data-label);
+        color: #475569;
+      }
+
+      table button {
+        margin: 5px 0 0 0;
+        width: 100%;
+      }
+    }
+    
+    /* Modal */
+    #modalCotizacion {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.4);
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+    
+    #modalCotizacion .modal-content {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      width: 700px;
+      max-width: 95%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    
+    #modalCotizacion h3 {
+      margin-top: 0;
+      color: #1e40af;
+      border-bottom: 2px solid #e0e7ff;
+      padding-bottom: 10px;
+    }
+    
+    #modalCotizacion label {
+      font-weight: 600;
+      display: block;
+      margin-top: 12px;
+      color: #374151;
+    }
+    
+    #modalCotizacion input {
+      width: 100%;
+      padding: 6px 8px;
+      margin-top: 4px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    
+    #modalCotizacion .buttons {
+      margin-top: 20px;
+      text-align: right;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    #modalCotizacion button {
+      padding: 8px 16px;
+      margin-left: 10px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+    
+    #modalCotizacion button.save {
+      background-color: #059669;
+      color: white;
+    }
+    
+    #modalCotizacion button.save:hover {
+      background-color: #047857;
+    }
+    
+    #modalCotizacion button.cancel {
+      background-color: #6b7280;
+      color: white;
+    }
+    
+    #modalCotizacion button.cancel:hover {
+      background-color: #4b5563;
+    }
+    
+    #modalCotizacion button.add-cost {
+      background-color: #2563eb;
+      color: white;
+      margin-bottom: 15px;
+      padding: 10px 20px;
+      font-size: 14px;
+    }
+    
+    #modalCotizacion button.add-cost:hover {
+      background-color: #1d4ed8;
+    }
+    
+    /* Estilos para la tabla de costos */
+    .costos-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 15px 0;
+      background: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .costos-table th,
+    .costos-table td {
+      padding: 12px 8px;
+      text-align: left;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    
+    .costos-table th {
+      background-color: #f8fafc;
+      font-weight: 600;
+      color: #374151;
+      font-size: 13px;
+    }
+    
+    .costos-table td {
+      background-color: white;
+    }
+    
+    .costos-table input {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+      font-size: 13px;
+      transition: border-color 0.3s ease;
+    }
+    
+    .costos-table input:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+    }
+    
+    .costos-table .delete-btn {
+      background-color: #ef4444;
+      color: white;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: background-color 0.3s ease;
+    }
+    
+    .costos-table .delete-btn:hover {
+      background-color: #dc2626;
+    }
+    
+    .totals-display {
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+      padding: 16px;
+      border-radius: 8px;
+      margin: 20px 0;
+      font-weight: 600;
+      border: 1px solid #bae6fd;
+    }
+    
+    .totals-display div {
+      margin-bottom: 8px;
+      font-size: 15px;
+    }
+    
+    .beneficio-display {
+      font-size: 16px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 2px solid #7dd3fc;
+      font-weight: 700;
+    }
+    
+    .beneficio-positivo {
+      color: #059669;
+    }
+    
+    .beneficio-negativo {
+      color: #dc2626;
+    }
+    
+    .info-cotizacion {
+      background-color: #f0f9ff;
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 15px;
+      border-left: 4px solid #2563eb;
+    }
+    
+    .info-cotizacion p {
+      margin: 4px 0;
+      font-size: 14px;
+      color: #374151;
+    }
+    
+    .conceptos-predefinidos {
+      margin-bottom: 15px;
+    }
+    
+    .conceptos-predefinidos h4 {
+      color: #374151;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    
+    .conceptos-predefinidos button {
+      background-color: #dbeafe;
+      color: #1e40af;
+      border: 1px solid #93c5fd;
+      padding: 6px 12px;
+      margin: 2px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.3s ease;
+    }
+    
+    .conceptos-predefinidos button:hover {
+      background-color: #bfdbfe;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>📦 Nueva Cotización</h1>
+  <form id="form">
+    <label for="cliente">Cliente:</label>
+    <input type="text" id="cliente" name="cliente" required>
+
+    <label for="tipo_operacion">Tipo Operación:</label>
+    <select id="tipo_operacion" name="tipo_operacion" required>
+      <option value="IA">Importación Aérea</option>
+      <option value="IM">Importación Marítima</option>
+      <option value="EA">Exportación Aérea</option>
+      <option value="EM">Exportación Marítima</option>
+    </select>
+
+    <label for="modo_transporte">Modo Transporte:</label>
+    <select id="modo_transporte" name="modo_transporte" required>
+      <option value="Aerea">Aérea</option>
+      <option value="Maritima FCL">Marítima FCL</option>
+      <option value="Maritima LCL">Marítima LCL</option>
+      <option value="Terrestre">Terrestre</option>
+    </select>
+
+    <label for="incoterm">Incoterm:</label>
+    <input type="text" id="incoterm" name="incoterm" required>
+
+    <label for="origen">Origen:</label>
+    <input type="text" id="origen" name="origen" required>
+
+    <label for="destino">Destino:</label>
+    <input type="text" id="destino" name="destino" required>
+
+    <label for="referencia">Referencia:</label>
+    <input type="text" id="referencia" name="referencia">
+
+    <button type="submit">Guardar</button>
+  </form>
+
+  <h2>📋 Cotizaciones</h2>
+
+  <!-- Filtros -->
+  <div id="filtros">
+    <input id="filtro-codigo" placeholder="Filtrar por Código">
+    <input id="filtro-cliente" placeholder="Filtrar por Cliente">
+    <input id="filtro-origen" placeholder="Filtrar por Origen">
+    <input id="filtro-destino" placeholder="Filtrar por Destino">
+    <input id="filtro-referencia" placeholder="Filtrar por Referencia">
+  </div>
+
+  <!-- Modal de Cotización -->
+  <div id="modalCotizacion">
+    <div class="modal-content">
+      <h3 id="modalTitulo">Cotización</h3>
+      <div id="infoCotizacion" class="info-cotizacion"></div>
+
+      <div id="costosContainer">
+        <!-- Aquí se generan los campos dinámicamente -->
+      </div>
+
+      <div class="buttons">
+        <button class="cancel" onclick="cerrarModal()">Cancelar</button>
+        <button class="save" onclick="guardarCotizacion()">Guardar Cotización</button>
+      </div>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Código</th>
+        <th>Cliente</th>
+        <th>Origen</th>
+        <th>Destino</th>
+        <th>Referencia</th>
+        <th>Incoterm</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody id="tabla-cotizaciones"></tbody>
+  </table>
+
+  <script>
+    let cotizacionesGlobal = [];
+    let costosPersonalizados = [];
+
+    // Conceptos predefinidos por tipo de operación
+    const conceptosPorOperacion = {
+      'IA': [ // Importación Aérea
+        'Flete Aéreo Internacional',
+        'Agencia de Carga Aérea',
+        'Despacho de Aduana Importación',
+        'Impuestos de Importación',
+        'Derechos Aduaneros',
+        'Almacenaje Aéreo',
+        'Transporte Interno Destino',
+        'Seguro de Carga',
+        'Tasas Aeroportuarias',
+        'Handling Aéreo'
+      ],
+      'IM': [ // Importación Marítima
+        'Flete Marítimo Internacional',
+        'Agencia Marítima',
+        'Despacho de Aduana Importación',
+        'Impuestos de Importación',
+        'Derechos Aduaneros',
+        'Almacenaje Portuario',
+        'Transporte Interno Destino',
+        'Seguro de Carga',
+        'Gastos Portuarios',
+        'THC (Terminal Handling Charge)'
+      ],
+      'EA': [ // Exportación Aérea
+        'Flete Aéreo Internacional',
+        'Agencia de Carga Aérea',
+        'Despacho de Aduana Exportación',
+        'Transporte Interno Origen',
+        'Seguro de Carga',
+        'Tasas Aeroportuarias',
+        'Handling Aéreo',
+        'Documentación Exportación',
+        'Certificados y Permisos'
+      ],
+      'EM': [ // Exportación Marítima
+        'Flete Marítimo Internacional',
+        'Agencia Marítima',
+        'Despacho de Aduana Exportación',
+        'Transporte Interno Origen',
+        'Seguro de Carga',
+        'Gastos Portuarios',
+        'THC (Terminal Handling Charge)',
+        'Documentación Exportación',
+        'Certificados y Permisos'
+      ]
+    };
+
+    const gastosPorIncoterm = {
+      EXW: ['Agencia Marítima', 'Despacho de Aduana', 'Impuestos', 'Derechos'],
+      FOB: ['Agencia Marítima'],
+      DAP: ['Agencia Marítima', 'Costos de Entrega'],
+      CIF: ['Agencia Marítima', 'Despacho de Aduana', 'Impuestos', 'Derechos', 'Seguro', 'Flete'],
+      DDP: ['Agencia Marítima', 'Despacho de Aduana', 'Impuestos', 'Derechos', 'Costos de Entrega'],
+    };
+
+    let cotizacionActual = null;
+
+    async function crearCarpeta(codigo) {
+      const res = await fetch("http://localhost:8000/crear_carpeta/", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ codigo })
+      });
+      const data = await res.json();
+      if (res.ok) alert(data.mensaje);
+      else alert("Error: " + data.error);
+    }
+
+    async function abrirCarpeta(codigo) {
+      try {
+        const res = await fetch("http://localhost:8000/abrir_carpeta/", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({ codigo })
+        });
+        const data = await res.json();
+        
+        if (res.ok) {
+          console.log("Carpeta abierta:", data.mensaje);
+        } else {
+          alert("❌ Error: " + data.error);
+        }
+      } catch (error) {
+        alert("🔴 Error de conexión con el servidor: " + error.message);
+      }
+    }
+
+    function renderizarTabla(cotizaciones) {
+      const tbody = document.getElementById("tabla-cotizaciones");
+      tbody.innerHTML = cotizaciones.map(c => `
+        <tr>
+          <td data-label="Código">${c.codigo}</td>
+          <td data-label="Cliente">${c.cliente}</td>
+          <td data-label="Origen">${c.origen}</td>
+          <td data-label="Destino">${c.destino}</td>
+          <td data-label="Referencia">${c.referencia || ''}</td>
+          <td data-label="Incoterm">${c.incoterm || ''}</td>
+          <td data-label="Acciones">
+            <button onclick="crearCarpeta('${c.codigo}')">Crear Carpeta</button>
+            <button onclick="abrirCarpeta('${c.codigo}')">Abrir Carpeta</button>
+            <button onclick="abrirModuloCotizacion('${c.codigo}')">Cotizar</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function aplicarFiltros() {
+      const filtroCodigo = document.getElementById('filtro-codigo').value.toLowerCase();
+      const filtroCliente = document.getElementById('filtro-cliente').value.toLowerCase();
+      const filtroOrigen = document.getElementById('filtro-origen').value.toLowerCase();
+      const filtroDestino = document.getElementById('filtro-destino').value.toLowerCase();
+      const filtroReferencia = document.getElementById('filtro-referencia').value.toLowerCase();
+
+      const filtradas = cotizacionesGlobal.filter(c => 
+        c.codigo.toLowerCase().includes(filtroCodigo) &&
+        c.cliente.toLowerCase().includes(filtroCliente) &&
+        c.origen.toLowerCase().includes(filtroOrigen) &&
+        c.destino.toLowerCase().includes(filtroDestino) &&
+        (c.referencia || '').toLowerCase().includes(filtroReferencia)
+      );
+
+      renderizarTabla(filtradas);
+    }
+
+    async function cargarCotizaciones() {
+      const res = await fetch("http://localhost:8000/cotizaciones");
+      cotizacionesGlobal = await res.json();
+      aplicarFiltros();
+    }
+
+    document.getElementById('filtro-codigo').addEventListener('input', aplicarFiltros);
+    document.getElementById('filtro-cliente').addEventListener('input', aplicarFiltros);
+    document.getElementById('filtro-origen').addEventListener('input', aplicarFiltros);
+    document.getElementById('filtro-destino').addEventListener('input', aplicarFiltros);
+    document.getElementById('filtro-referencia').addEventListener('input', aplicarFiltros);
+
+    document.getElementById('form').addEventListener('submit', async e => {
+      e.preventDefault();
+      const form = e.target;
+      const data = {
+        cliente: form.cliente.value.trim(),
+        tipo_operacion: form.tipo_operacion.value,
+        modo_transporte: form.modo_transporte.value,
+        incoterm: form.incoterm.value.trim(),
+        origen: form.origen.value.trim(),
+        destino: form.destino.value.trim(),
+        referencia: form.referencia.value.trim(),
+      };
+      try {
+        const res = await fetch("http://localhost:8000/cotizaciones", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data)
+        });
+        if (!res.ok) throw new Error("Error al guardar cotización");
+        alert("Cotización guardada correctamente");
+        form.reset();
+        cargarCotizaciones();
+      } catch (error) {
+        alert(error.message);
+      }
+    });
+
+    cargarCotizaciones();
+
+    // Función para mostrar información de la cotización
+    function mostrarInfoCotizacion() {
+      const infoDiv = document.getElementById('infoCotizacion');
+      infoDiv.innerHTML = `
+        <p><strong>Operación:</strong> ${cotizacionActual.tipo_operacion} - ${obtenerNombreOperacion(cotizacionActual.tipo_operacion)}</p>
+        <p><strong>Modo Transporte:</strong> ${cotizacionActual.modo_transporte}</p>
+        <p><strong>Incoterm:</strong> ${cotizacionActual.incoterm}</p>
+        <p><strong>Ruta:</strong> ${cotizacionActual.origen} → ${cotizacionActual.destino}</p>
+      `;
+    }
+
+    function obtenerNombreOperacion(tipo) {
+      const nombres = {
+        'IA': 'Importación Aérea',
+        'IM': 'Importación Marítima',
+        'EA': 'Exportación Aérea',
+        'EM': 'Exportación Marítima'
+      };
+      return nombres[tipo] || tipo;
+    }
+
+    // Función para mostrar el panel de costos personalizados
+    function mostrarPanelCostosPersonalizados() {
+      const container = document.getElementById('costosContainer');
+      container.innerHTML = '';
+
+      // Mostrar conceptos predefinidos
+      const conceptosPredefinidos = conceptosPorOperacion[cotizacionActual.tipo_operacion] || [];
+      if (conceptosPredefinidos.length > 0) {
+        const conceptosDiv = document.createElement('div');
+        conceptosDiv.className = 'conceptos-predefinidos';
+        conceptosDiv.innerHTML = `
+          <h4>Conceptos predefinidos para ${obtenerNombreOperacion(cotizacionActual.tipo_operacion)}:</h4>
+          ${conceptosPredefinidos.map(concepto => 
+            `<button onclick="agregarConceptoPredefinido('${concepto}')">${concepto}</button>`
+          ).join('')}
+        `;
+        container.appendChild(conceptosDiv);
+      }
+
+      // Botón para agregar costo
+      const addButton = document.createElement('button');
+      addButton.className = 'add-cost';
+      addButton.textContent = '+ Agregar Concepto Personalizado';
+      addButton.onclick = agregarFilaCosto;
+      container.appendChild(addButton);
+
+      // Crear tabla
+      const table = document.createElement('table');
+      table.className = 'costos-table';
+      table.innerHTML = `
+        <thead>
+          <tr>
+            <th width="40%">Concepto</th>
+            <th width="25%">Costo (USD)</th>
+            <th width="25%">Venta (USD)</th>
+            <th width="10%">Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="costosBody">
+        </tbody>
+      `;
+      container.appendChild(table);
+
+      // Totales
+      const totalsDiv = document.createElement('div');
+      totalsDiv.className = 'totals-display';
+      totalsDiv.id = 'totalsDisplay';
+      totalsDiv.innerHTML = `
+        <div>Total Costo: $<span id="totalCosto">0.00</span></div>
+        <div>Total Venta: $<span id="totalVenta">0.00</span></div>
+        <div class="beneficio-display" id="beneficioDisplay">Beneficio: $0.00 (0%)</div>
+      `;
+      container.appendChild(totalsDiv);
+
+      // Agregar algunos conceptos base según el incoterm
+      const incoterm = (cotizacionActual.incoterm || '').toUpperCase();
+      const conceptosBase = gastosPorIncoterm[incoterm] || ['Agencia Principal'];
+      
+      conceptosBase.forEach(concepto => {
+        agregarFilaCosto(concepto);
+      });
+
+      actualizarTotales();
+    }
+
+    function agregarConceptoPredefinido(concepto) {
+      agregarFilaCosto(concepto);
+    }
+
+    function agregarFilaCosto(conceptoPredefinido = '') {
+      const tbody = document.getElementById('costosBody');
+      const tr = document.createElement('tr');
+      
+      tr.innerHTML = `
+        <td>
+          <input type="text" class="concepto-input" value="${conceptoPredefinido}" placeholder="Nombre del concepto">
+        </td>
+        <td>
+          <input type="number" class="costo-input" min="0" step="0.01" value="0" placeholder="0.00">
+        </td>
+        <td>
+          <input type="number" class="venta-input" min="0" step="0.01" value="0" placeholder="0.00">
+        </td>
+        <td>
+          <button class="delete-btn" onclick="eliminarFilaCosto(this)">✕</button>
+        </td>
+      `;
+      
+      tbody.appendChild(tr);
+      
+      // Agregar event listeners para actualizar totales
+      const inputs = tr.querySelectorAll('input');
+      inputs.forEach(input => {
+        input.addEventListener('input', actualizarTotales);
+      });
+      
+      actualizarTotales();
+    }
+
+    function eliminarFilaCosto(button) {
+      const tr = button.closest('tr');
+      tr.remove();
+      actualizarTotales();
+    }
+
+    function actualizarTotales() {
+      const tbody = document.getElementById('costosBody');
+      const filas = tbody.querySelectorAll('tr');
+      
+      let totalCosto = 0;
+      let totalVenta = 0;
+      
+      filas.forEach(fila => {
+        const costoInput = fila.querySelector('.costo-input');
+        const ventaInput = fila.querySelector('.venta-input');
+        
+        const costo = parseFloat(costoInput?.value) || 0;
+        const venta = parseFloat(ventaInput?.value) || 0;
+        
+        totalCosto += costo;
+        totalVenta += venta;
+      });
+      
+      // Actualizar display
+      document.getElementById('totalCosto').textContent = totalCosto.toFixed(2);
+      document.getElementById('totalVenta').textContent = totalVenta.toFixed(2);
+      
+      // Calcular y mostrar beneficio
+      const beneficio = totalVenta - totalCosto;
+      const porcentajeBeneficio = totalCosto > 0 ? (beneficio / totalCosto) * 100 : 0;
+      
+      const beneficioDisplay = document.getElementById('beneficioDisplay');
+      beneficioDisplay.textContent = `Beneficio: $${beneficio.toFixed(2)} (${porcentajeBeneficio.toFixed(2)}%)`;
+      beneficioDisplay.className = `beneficio-display ${beneficio >= 0 ? 'beneficio-positivo' : 'beneficio-negativo'}`;
+    }
+
+    function obtenerDatosCostos() {
+      const tbody = document.getElementById('costosBody');
+      const filas = tbody.querySelectorAll('tr');
+      const costosVenta = {};
+      
+      filas.forEach((fila, index) => {
+        const conceptoInput = fila.querySelector('.concepto-input');
+        const costoInput = fila.querySelector('.costo-input');
+        const ventaInput = fila.querySelector('.venta-input');
+        
+        const concepto = conceptoInput?.value.trim() || `Concepto ${index + 1}`;
+        const costo = parseFloat(costoInput?.value) || 0;
+        const venta = parseFloat(ventaInput?.value) || 0;
+        
+        costosVenta[concepto] = {
+          costo: costo,
+          venta: venta
+        };
+      });
+      
+      return costosVenta;
+    }
+
+    async function abrirModuloCotizacion(codigo) {
+      cotizacionActual = cotizacionesGlobal.find(c => c.codigo === codigo);
+      if (!cotizacionActual) {
+        alert('Cotización no encontrada');
+        return;
+      }
+      
+      document.getElementById('modalTitulo').innerText = `Cotización ${cotizacionActual.codigo} - ${cotizacionActual.cliente}`;
+      mostrarInfoCotizacion();
+
+      const tipoOperacion = cotizacionActual.tipo_operacion;
+      const modoTransporte = (cotizacionActual.modo_transporte || '').toLowerCase();
+
+      console.log('abrirModuloCotizacion:', cotizacionActual);
+      console.log('Tipo Operación:', tipoOperacion, 'Modo Transporte:', modoTransporte);
+
+      // Para todas las operaciones (IA, EA, EM, IM) mostrar panel de costos personalizados
+      if (['IA', 'EA', 'EM', 'IM'].includes(tipoOperacion)) {
+        mostrarPanelCostosPersonalizados();
+      } else if (
+        cotizacionActual.incoterm?.toUpperCase() === 'FOB' &&
+        (modoTransporte === 'maritima lcl' || modoTransporte === 'maritima fcl')
+      ) {
+        // Lógica existente para casos específicos FOB
+        mostrarSelectorAgencias();
+      } else {
+        // Caso estándar
+        mostrarCostosPorIncoterm();
+      }
+
+      document.getElementById('modalCotizacion').style.display = 'flex';
+    }
+
+    async function mostrarSelectorAgencias() {
+      const container = document.getElementById('costosContainer');
+      container.innerHTML = '';
+
+      const labelAgencia = document.createElement('label');
+      labelAgencia.textContent = 'Seleccioná Agencia Marítima:';
+      const selectAgencias = document.createElement('select');
+      selectAgencias.id = 'selectAgencia';
+      container.appendChild(labelAgencia);
+      container.appendChild(selectAgencias);
+
+      try {
+        const url = `http://localhost:8000/costos_agencias?modo_transporte=${encodeURIComponent(cotizacionActual.modo_transporte)}`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('Error al obtener agencias');
+        const data = await res.json();
+
+        if (!data || Object.keys(data).length === 0) {
+          // Si no hay agencias, mostrar panel personalizado
+          mostrarPanelCostosPersonalizados();
+          return;
+        }
+
+        for (const agenciaNombre in data) {
+          const option = document.createElement('option');
+          option.value = agenciaNombre;
+          option.textContent = agenciaNombre;
+          selectAgencias.appendChild(option);
+        }
+
+        selectAgencias.addEventListener('change', () => {
+          mostrarCostos(data[selectAgencias.value]);
+        });
+
+        selectAgencias.selectedIndex = 0;
+        mostrarCostos(data[selectAgencias.value]);
+
+      } catch (error) {
+        // En caso de error, mostrar panel personalizado
+        mostrarPanelCostosPersonalizados();
+      }
+    }
+
+    function mostrarCostosPorIncoterm() {
+      const container = document.getElementById('costosContainer');
+      container.innerHTML = '';
+
+      const incoterm = (cotizacionActual.incoterm || '').toUpperCase();
+      const gastos = gastosPorIncoterm[incoterm] || ['Agencia Marítima', 'Despacho de Aduana'];
+
+      gastos.forEach(gasto => {
+        const label = document.createElement('label');
+        label.textContent = gasto;
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.min = 0;
+        input.value = 0;
+        input.dataset.gasto = gasto;
+        container.appendChild(label);
+        container.appendChild(input);
+      });
+    }
+
+    function cerrarModal() {
+      document.getElementById('modalCotizacion').style.display = 'none';
+      cotizacionActual = null;
+      costosPersonalizados = [];
+    }
+
+    async function guardarCotizacion() {
+      let costosVenta = {};
+
+      // Determinar de dónde obtener los datos
+      const container = document.getElementById('costosContainer');
+      const costosBody = document.getElementById('costosBody');
+      
+      if (costosBody) {
+        // Usar datos del panel personalizado
+        costosVenta = obtenerDatosCostos();
+      } else {
+        // Usar datos del método anterior
+        const inputs = container.querySelectorAll('input[type="number"]');
+        inputs.forEach(input => {
+          const concepto = input.dataset.concepto || input.dataset.gasto || 'Concepto';
+          const valor = parseFloat(input.value) || 0;
+          
+          if (!costosVenta[concepto]) {
+            costosVenta[concepto] = { costo: 0, venta: 0 };
+          }
+          
+          // Asumir que todos los inputs son de venta para compatibilidad
+          costosVenta[concepto].venta = valor;
+        });
+      }
+
+      // Datos básicos de la cotización
+      const datosCarga = {
+        codigo: cotizacionActual.codigo,
+        cliente: cotizacionActual.cliente,
+        tipo_operacion: cotizacionActual.tipo_operacion,
+        modo_transporte: cotizacionActual.modo_transporte,
+        incoterm: cotizacionActual.incoterm,
+        origen: cotizacionActual.origen,
+        destino: cotizacionActual.destino,
+        referencia: cotizacionActual.referencia || '',
+      };
+
+      // Preguntar qué PDF generar
+      const opcion = prompt("Ingrese 1 para PDF Guardar Interno, 2 para PDF Enviar Cliente:");
+
+      if (opcion === "1") {
+        generarPDFInterno(datosCarga, costosVenta);
+      } else if (opcion === "2") {
+        generarPDFCliente(datosCarga, costosVenta);
+      } else {
+        alert("Opción inválida. No se generó PDF.");
+        return;
+      }
+
+      cerrarModal();
+    }
+
+    function generarPDFInterno(datosCarga, costosVenta) {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      doc.setFontSize(18);
+      doc.text(`Cotización Interna: ${datosCarga.codigo}`, 14, 20);
+
+      doc.setFontSize(12);
+      doc.text(`Cliente: ${datosCarga.cliente}`, 14, 30);
+      doc.text(`Tipo Operación: ${datosCarga.tipo_operacion}`, 14, 36);
+      doc.text(`Modo Transporte: ${datosCarga.modo_transporte}`, 14, 42);
+      doc.text(`Incoterm: ${datosCarga.incoterm}`, 14, 48);
+      doc.text(`Origen: ${datosCarga.origen}`, 14, 54);
+      doc.text(`Destino: ${datosCarga.destino}`, 14, 60);
+      doc.text(`Referencia: ${datosCarga.referencia}`, 14, 66);
+
+      let y = 80;
+      doc.setFontSize(14);
+      doc.text("Detalle de Costos y Ventas", 14, y);
+      y += 8;
+
+      // Tabla headers
+      doc.setFontSize(12);
+      doc.text("Concepto", 14, y);
+      doc.text("Costo ($)", 80, y);
+      doc.text("Venta ($)", 120, y);
+      doc.text("Beneficio (%)", 160, y);
+      y += 6;
+
+      // Detalle fila por fila
+      for (const concepto in costosVenta) {
+        const costo = costosVenta[concepto].costo;
+        const venta = costosVenta[concepto].venta;
+        const beneficio = costo === 0 ? 0 : ((venta - costo) / costo) * 100;
+
+        doc.text(concepto, 14, y);
+        doc.text(costo.toFixed(2), 80, y, { align: 'right' });
+        doc.text(venta.toFixed(2), 120, y, { align: 'right' });
+        doc.text(beneficio.toFixed(2), 160, y, { align: 'right' });
+        y += 8;
+        if (y > 270) {
+          doc.addPage();
+          y = 20;
+        }
+      }
+
+      // Totales
+      const totalCosto = Object.values(costosVenta).reduce((sum, c) => sum + c.costo, 0);
+      const totalVenta = Object.values(costosVenta).reduce((sum, c) => sum + c.venta, 0);
+      const totalBeneficio = totalCosto === 0 ? 0 : ((totalVenta - totalCosto) / totalCosto) * 100;
+
+      y += 10;
+      doc.setFontSize(14);
+      doc.text(`Total Costo: $${totalCosto.toFixed(2)}`, 14, y);
+      y += 6;
+      doc.text(`Total Venta: $${totalVenta.toFixed(2)}`, 14, y);
+      y += 6;
+      doc.text(`Beneficio Total: ${totalBeneficio.toFixed(2)}%`, 14, y);
+
+      doc.save(`Cotizacion_Interna_${datosCarga.codigo}.pdf`);
+    }
+
+    function generarPDFCliente(datosCarga, costosVenta) {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      doc.setFontSize(18);
+      doc.text(`Cotización para Cliente: ${datosCarga.codigo}`, 14, 20);
+
+      doc.setFontSize(12);
+      doc.text(`Cliente: ${datosCarga.cliente}`, 14, 30);
+      doc.text(`Tipo Operación: ${datosCarga.tipo_operacion}`, 14, 36);
+      doc.text(`Modo Transporte: ${datosCarga.modo_transporte}`, 14, 42);
+      doc.text(`Incoterm: ${datosCarga.incoterm}`, 14, 48);
+      doc.text(`Origen: ${datosCarga.origen}`, 14, 54);
+      doc.text(`Destino: ${datosCarga.destino}`, 14, 60);
+      doc.text(`Referencia: ${datosCarga.referencia}`, 14, 66);
+
+      let y = 80;
+      doc.setFontSize(14);
+      doc.text("Detalle de Venta", 14, y);
+      y += 8;
+
+      // Tabla headers
+      doc.setFontSize(12);
+      doc.text("Concepto", 14, y);
+      doc.text("Venta ($)", 120, y);
+      y += 6;
+
+      // Detalle fila por fila (solo venta)
+      for (const concepto in costosVenta) {
+        const venta = costosVenta[concepto].venta;
+
+        doc.text(concepto, 14, y);
+        doc.text(venta.toFixed(2), 120, y, { align: 'right' });
+        y += 8;
+        if (y > 270) {
+          doc.addPage();
+          y = 20;
+        }
+      }
+
+      const totalVenta = Object.values(costosVenta).reduce((sum, c) => sum + c.venta, 0);
+      y += 10;
+      doc.setFontSize(14);
+      doc.text(`Total Venta: $${totalVenta.toFixed(2)}`, 14, y);
+
+      doc.save(`Cotizacion_Cliente_${datosCarga.codigo}.pdf`);
+    }
+  </script>
+</body>
+</html>
