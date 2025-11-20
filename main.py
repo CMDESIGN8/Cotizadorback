@@ -3261,6 +3261,75 @@ async def actualizar_operacion(codigo_operacion: str, update_data: dict):
         logger.exception("Error actualizando operación: %s", e)
         raise HTTPException(status_code=500, detail=f"Error al actualizar operación: {str(e)}")
 
+# ---------------------------------------------------------
+# AGREGAR ESTO AL FINAL DE TU MAIN.PY
+# ---------------------------------------------------------
+
+# 1. Endpoint para CLIENTES
+@app.get("/clientes")
+async def leer_clientes():
+    try:
+        # Consulta a Supabase
+        response = supabase.table("clientes").select("*").order("nombre").execute()
+        return response.data
+    except Exception as e:
+        logger.error(f"Error obteniendo clientes: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# 2. Endpoint para COTIZACIONES (Listado general)
+@app.get("/cotizaciones")
+async def leer_cotizaciones():
+    try:
+        # Traemos las últimas 50 cotizaciones ordenadas por fecha
+        response = supabase.table("cotizaciones").select("*").order("fecha_creacion", desc=True).limit(50).execute()
+        
+        # Procesamos para agregar estado visual (opcional, según tu lógica)
+        cotizaciones_data = response.data
+        for cot in cotizaciones_data:
+            # Calcular estado simple si es necesario
+            pass 
+            
+        return cotizaciones_data
+    except Exception as e:
+        logger.error(f"Error obteniendo cotizaciones: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# 3. Endpoint para PUERTOS Y AEROPUERTOS (Con filtros)
+@app.get("/puertos_aeropuertos")
+async def leer_puertos_aeropuertos(tipo: Optional[str] = None, pais: Optional[str] = None):
+    try:
+        query = supabase.table("puertos_aeropuertos").select("*")
+        
+        # Aplicar filtros si vienen en la URL (?tipo=Maritimo&pais=China)
+        if tipo:
+            query = query.eq("tipo", tipo)
+        if pais:
+            query = query.eq("pais", pais)
+            
+        response = query.order("nombre").execute()
+        return response.data
+    except Exception as e:
+        logger.error(f"Error obteniendo puertos/aeropuertos: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# 4. Endpoint para PAISES (Lo vi en tus logs de error también)
+@app.get("/paises")
+async def leer_paises():
+    try:
+        # Asumiendo que tienes una tabla paises o sacas distinct de puertos
+        # Si tienes tabla 'paises':
+        # response = supabase.table("paises").select("*").execute()
+        
+        # O si sacas los países de la tabla de puertos:
+        response = supabase.table("puertos_aeropuertos").select("pais").execute()
+        # Filtrar únicos en python
+        paises_unicos = list(set([item['pais'] for item in response.data if item['pais']]))
+        return sorted(paises_unicos)
+        
+    except Exception as e:
+        logger.error(f"Error obteniendo países: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 # -----------------------
 # Main (for local run)
 # -----------------------
@@ -3269,3 +3338,4 @@ if __name__ == "__main__":
     logger.info("Ejecutando main.py directamente (uvicorn) - host 0.0.0.0:8000")
 
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=(ENV=="development"))
+
